@@ -28,9 +28,14 @@ RefereeBase::RefereeBase(ros::NodeHandle& nh, Base& base) : base_(base), nh_(nh)
   RefereeBase::manual_data_sub_ =
       nh.subscribe<rm_msgs::ManualToReferee>("/manual_to_referee", 10, &RefereeBase::manualDataCallBack, this);
   RefereeBase::camera_name_sub_ = nh.subscribe("/camera_name", 10, &RefereeBase::cameraNameCallBack, this);
-  if (base_.robot_id_ == rm_referee::RobotId::RED_RADAR || base_.robot_id_ == rm_referee::RobotId::BLUE_RADAR)
-    RefereeBase::radar_date_sub_ =
-        nh.subscribe<std_msgs::Int8MultiArray>("/data", 10, &RefereeBase::radarDataCallBack, this);
+  if (nh.hasParam("radar_receive_topic") &&
+      (base_.robot_id_ == rm_referee::RobotId::RED_RADAR || base_.robot_id_ == rm_referee::RobotId::BLUE_RADAR))
+  {
+    std::string topic;
+    nh.getParam("radar_receive_topic", topic);
+    radar_receive_sub_ =
+        nh.subscribe<rm_msgs::ClientMapReceiveData>(topic, 10, &RefereeBase::radarReceiveCallback, this);
+  }
   XmlRpc::XmlRpcValue rpc_value;
   ros::NodeHandle ui_nh(nh, "ui");
   ui_nh.getParam("trigger_change", rpc_value);
@@ -208,9 +213,17 @@ void RefereeBase::manualDataCallBack(const rm_msgs::ManualToReferee::ConstPtr& d
   if (cover_flash_ui_)
     cover_flash_ui_->updateManualCmdData(data, ros::Time::now());
 }
-void RefereeBase::radarDataCallBack(const std_msgs::Int8MultiArrayConstPtr& data)
+
+void RefereeBase::radarReceiveCallback(const rm_msgs::ClientMapReceiveData::ConstPtr& data)
 {
+  rm_referee::ClientMapReceiveData send_data;
+  send_data.target_position_x = data->target_position_x;
+  send_data.target_position_y = data->target_position_y;
+  send_data.target_robot_ID = data->target_robot_ID;
+
+  interactive_data_sender_->sendRadarInteractiveData(send_data);
 }
+
 void RefereeBase::cameraNameCallBack(const std_msgs::StringConstPtr& data)
 {
   if (camera_trigger_change_ui_)

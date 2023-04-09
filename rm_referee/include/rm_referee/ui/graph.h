@@ -17,6 +17,7 @@ public:
   void addUi(const rm_referee::GraphConfig& config, const std::string& content, bool priority_flag = false);
   void sendUi(const ros::Time& time);
   void sendInteractiveData(int data_cmd_id, int receiver_id, unsigned char data);
+  void sendRadarInteractiveData(rm_referee::ClientMapReceiveData& data);
   void clearTxBuffer()
   {
     for (int i = 0; i < 128; i++)

@@ -43,8 +43,8 @@ public:
   virtual void cardCmdDataCallback(const rm_msgs::StateCmd::ConstPtr& data);
   virtual void engineerUiDataCallback(const rm_msgs::EngineerUi::ConstPtr& data);
   virtual void manualDataCallBack(const rm_msgs::ManualToReferee::ConstPtr& data);
-  virtual void radarDataCallBack(const std_msgs::Int8MultiArrayConstPtr& data);
   virtual void cameraNameCallBack(const std_msgs::StringConstPtr& data);
+  virtual void radarReceiveCallback(const rm_msgs::ClientMapReceiveData::ConstPtr& data);
 
   ros::Subscriber joint_state_sub_;
   ros::Subscriber actuator_state_sub_;
@@ -57,9 +57,9 @@ public:
   ros::Subscriber card_cmd_sub_;
   ros::Subscriber calibration_status_sub_;
   ros::Subscriber engineer_cmd_sub_;
-  ros::Subscriber radar_date_sub_;
   ros::Subscriber manual_data_sub_;
   ros::Subscriber camera_name_sub_;
+  ros::Subscriber radar_receive_sub_;
 
   ChassisTriggerChangeUi* chassis_trigger_change_ui_{};
   ShooterTriggerChangeUi* shooter_trigger_change_ui_{};
