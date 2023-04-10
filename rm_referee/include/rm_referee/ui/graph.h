@@ -17,6 +17,7 @@ public:
   void addUi(const rm_referee::GraphConfig& config, const std::string& content, bool priority_flag = false);
   void sendUi(const ros::Time& time);
   void sendInteractiveData(int data_cmd_id, int receiver_id, unsigned char data);
+  void sendRadarInteractiveData(rm_referee::ClientMapReceiveData& data);
   void clearTxBuffer()
   {
     for (int i = 0; i < 128; i++)
@@ -31,11 +32,11 @@ public:
   void updatePosition(int index);
   void setOperation(const rm_referee::GraphOperation& operation)
   {
-    config_.operate_type_ = operation;
+    config_.operate_type = operation;
   }
   void setColor(const rm_referee::GraphColor& color)
   {
-    config_.color_ = color;
+    config_.color = color;
   }
   void setContent(const std::string& content)
   {
@@ -43,19 +44,19 @@ public:
   }
   void setEndX(int end_x)
   {
-    config_.end_x_ = end_x;
+    config_.end_x = end_x;
   }
   void setEndY(int end_y)
   {
-    config_.end_y_ = end_y;
+    config_.end_y = end_y;
   }
   void setStartX(int start_x)
   {
-    config_.start_x_ = start_x;
+    config_.start_x = start_x;
   }
   void setStartY(int start_y)
   {
-    config_.start_y_ = start_y;
+    config_.start_y = start_y;
   }
 
   uint8_t tx_buffer_[128];
