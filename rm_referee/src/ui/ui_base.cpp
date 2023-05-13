@@ -115,6 +115,31 @@ void UiBase::sendInteractiveData(int data_cmd_id, int receiver_id, unsigned char
   sendSerial(ros::Time::now(), sizeof(InteractiveData));
 }
 
+void UiBase::sendRadarInteractiveData(rm_referee::ClientMapReceiveData& data)
+{
+  uint8_t tx_data[sizeof(rm_referee::ClientMapReceiveData)] = { 0 };
+  auto radar_interactive_data = (rm_referee::ClientMapReceiveData*)tx_data;
+
+  for (int i = 0; i < 128; i++)
+    tx_buffer_[i] = 0;
+  radar_interactive_data->target_robot_ID = data.target_robot_ID;
+  radar_interactive_data->target_position_x = data.target_position_x;
+  radar_interactive_data->target_position_y = data.target_position_y;
+  pack(tx_buffer_, tx_data, rm_referee::RefereeCmdId::CLIENT_MAP_CMD, sizeof(rm_referee::ClientMapReceiveData));
+  tx_len_ =
+      k_header_length_ + k_cmd_id_length_ + static_cast<int>(sizeof(rm_referee::ClientMapReceiveData) + k_tail_length_);
+
+  try
+  {
+    base_.serial_.write(tx_buffer_, tx_len_);
+  }
+  catch (serial::PortNotOpenedException& e)
+  {
+  }
+
+  clearTxBuffer();
+}
+
 void UiBase::sendUi(const ros::Time& time)
 {
   if (time - last_send_ < ros::Duration(0.05))

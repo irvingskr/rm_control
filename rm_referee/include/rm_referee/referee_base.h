@@ -47,6 +47,7 @@ public:
   virtual void cameraNameCallBack(const std_msgs::StringConstPtr& data);
   virtual void trackCallBack(const rm_msgs::TrackDataConstPtr& data);
   virtual void balanceStateCallback(const rm_msgs::BalanceStateConstPtr& data);
+  virtual void radarReceiveCallback(const rm_msgs::ClientMapReceiveData::ConstPtr& data);
 
   ros::Subscriber joint_state_sub_;
   ros::Subscriber actuator_state_sub_;
@@ -64,6 +65,7 @@ public:
   ros::Subscriber camera_name_sub_;
   ros::Subscriber track_sub_;
   ros::Subscriber balance_state_sub_;
+  ros::Subscriber radar_receive_sub_;
 
   ChassisTriggerChangeUi* chassis_trigger_change_ui_{};
   ShooterTriggerChangeUi* shooter_trigger_change_ui_{};
@@ -84,6 +86,8 @@ public:
 
   CoverFlashUi* cover_flash_ui_{};
   SpinFlashUi* spin_flash_ui_{};
+
+  UiBase* interactive_data_sender_{};
 
   Base& base_;
   ros::Timer add_ui_timer_;

@@ -30,10 +30,10 @@ RefereeBase::RefereeBase(ros::NodeHandle& nh, Base& base) : base_(base), nh_(nh)
   RefereeBase::camera_name_sub_ = nh.subscribe("/camera_name", 10, &RefereeBase::cameraNameCallBack, this);
   RefereeBase::balance_state_sub_ = nh.subscribe("/state", 10, &RefereeBase::balanceStateCallback, this);
   RefereeBase::track_sub_ = nh.subscribe<rm_msgs::TrackData>("/track", 10, &RefereeBase::trackCallBack, this);
-  if (base_.robot_id_ == rm_referee::RobotId::RED_RADAR || base_.robot_id_ == rm_referee::RobotId::BLUE_RADAR)
-    RefereeBase::radar_date_sub_ =
-        nh.subscribe<std_msgs::Int8MultiArray>("/data", 10, &RefereeBase::radarDataCallBack, this);
+  RefereeBase::radar_receive_sub_ =
+      nh.subscribe<rm_msgs::ClientMapReceiveData>("/rm_radar", 10, &RefereeBase::radarReceiveCallback, this);
   XmlRpc::XmlRpcValue rpc_value;
+  interactive_data_sender_ = new UiBase(rpc_value, base_);
   if (nh.hasParam("ui"))
   {
     ros::NodeHandle ui_nh(nh, "ui");
@@ -246,5 +246,14 @@ void RefereeBase::balanceStateCallback(const rm_msgs::BalanceStateConstPtr& data
 {
   if (balance_pitch_time_change_group_ui_)
     balance_pitch_time_change_group_ui_->calculatePointPosition(data, ros::Time::now());
+}
+void RefereeBase::radarReceiveCallback(const rm_msgs::ClientMapReceiveData::ConstPtr& data)
+{
+  rm_referee::ClientMapReceiveData send_data;
+  send_data.target_position_x = data->target_position_x;
+  send_data.target_position_y = data->target_position_y;
+  send_data.target_robot_ID = data->target_robot_ID;
+
+  interactive_data_sender_->sendRadarInteractiveData(send_data);
 }
 }  // namespace rm_referee
