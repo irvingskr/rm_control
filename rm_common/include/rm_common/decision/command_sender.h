@@ -51,7 +51,9 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
+#include <std_msgs/UInt8.h>
 #include <std_msgs/Float64.h>
+#include <rm_msgs/MultiDofCmd.h>
 #include <std_msgs/String.h>
 
 #include "rm_common/ros_utilities.h"
@@ -153,10 +155,11 @@ public:
       ROS_ERROR("Max Z angular velocity no defined (namespace: %s)", nh.getNamespace().c_str());
     else
       max_angular_z_.init(xml_rpc_value);
-    std::string topic;
+    std::string topic, chassis_topic;
     nh.getParam("power_limit_topic", topic);
-    power_limit_subscriber_ =
-        nh.subscribe<rm_msgs::ChassisCmd>(topic, 1, &Vel2DCommandSender::powerLimitCallback, this);
+    nh.getParam("chassis_power_limit_topic", chassis_topic);
+    chassis_power_limit_subscriber_ =
+        nh.subscribe<rm_msgs::ChassisCmd>(chassis_topic, 1, &Vel2DCommandSender::chassisCmdCallback, this);
   }
 
   void setLinearXVel(double scale)
@@ -185,13 +188,14 @@ public:
   }
 
 protected:
-  void powerLimitCallback(const rm_msgs::ChassisCmd::ConstPtr& msg)
+  void chassisCmdCallback(const rm_msgs::ChassisCmd::ConstPtr& msg)
   {
     power_limit_ = msg->power_limit;
   }
+
   LinearInterp max_linear_x_, max_linear_y_, max_angular_z_;
   double power_limit_ = 0;
-  ros::Subscriber power_limit_subscriber_;
+  ros::Subscriber chassis_power_limit_subscriber_;
 };
 
 class ChassisCommandSender : public TimeStampCommandSenderBase<rm_msgs::ChassisCmd>
@@ -213,8 +217,15 @@ public:
       ROS_ERROR("Accel Z no defined (namespace: %s)", nh.getNamespace().c_str());
     else
       accel_z_.init(xml_rpc_value);
+
+    std::string topic;
+    nh.getParam("power_limit_topic", topic);
   }
 
+  void updateSafetyPower(int safety_power)
+  {
+    power_limit_->updateSafetyPower(safety_power);
+  }
   void updateGameStatus(const rm_msgs::GameStatus data) override
   {
     power_limit_->setGameProgress(data);
@@ -238,9 +249,11 @@ public:
   void sendChassisCommand(const ros::Time& time, bool is_gyro)
   {
     power_limit_->setLimitPower(msg_, is_gyro);
+
     msg_.accel.linear.x = accel_x_.output(msg_.power_limit);
     msg_.accel.linear.y = accel_y_.output(msg_.power_limit);
     msg_.accel.angular.z = accel_z_.output(msg_.power_limit);
+
     TimeStampCommandSenderBase<rm_msgs::ChassisCmd>::sendCommand(time);
   }
   void setZero() override{};
@@ -291,6 +304,10 @@ public:
   bool getEject() const
   {
     return eject_flag_;
+  }
+  void setPoint(geometry_msgs::PointStamped point)
+  {
+    msg_.target_pos = point;
   }
 
 private:
@@ -390,6 +407,24 @@ private:
   double target_acceleration_tolerance_{};
   rm_msgs::TrackData track_data_;
   rm_msgs::GimbalDesError gimbal_des_error_;
+};
+
+class BalanceCommandSender : public CommandSenderBase<std_msgs::UInt8>
+{
+public:
+  explicit BalanceCommandSender(ros::NodeHandle& nh) : CommandSenderBase<std_msgs::UInt8>(nh)
+  {
+  }
+
+  void setBalanceMode(const int mode)
+  {
+    msg_.data = mode;
+  }
+  int getBalanceMode()
+  {
+    return msg_.data;
+  }
+  void setZero() override{};
 };
 
 class Vel3DCommandSender : public HeaderStampCommandSenderBase<geometry_msgs::TwistStamped>
@@ -605,4 +640,44 @@ public:
 private:
   std::string camera1_name_{}, camera2_name_{};
 };
+
+class MultiDofCommandSender : public TimeStampCommandSenderBase<rm_msgs::MultiDofCmd>
+{
+public:
+  explicit MultiDofCommandSender(ros::NodeHandle& nh) : TimeStampCommandSenderBase<rm_msgs::MultiDofCmd>(nh)
+  {
+  }
+  ~MultiDofCommandSender() = default;
+  void setMode(int mode)
+  {
+    msg_.mode = mode;
+  }
+  int getMode()
+  {
+    return msg_.mode;
+  }
+  void setGroupValue(double linear_x, double linear_y, double linear_z, double angular_x, double angular_y,
+                     double angular_z)
+  {
+    msg_.linear.x = linear_x;
+    msg_.linear.y = linear_y;
+    msg_.linear.z = linear_z;
+    msg_.angular.x = angular_x;
+    msg_.angular.y = angular_y;
+    msg_.angular.z = angular_z;
+  }
+  void setZero() override
+  {
+    msg_.linear.x = 0;
+    msg_.linear.y = 0;
+    msg_.linear.z = 0;
+    msg_.angular.x = 0;
+    msg_.angular.y = 0;
+    msg_.angular.z = 0;
+  }
+
+private:
+  ros::Time time_;
+};
+
 }  // namespace rm_common

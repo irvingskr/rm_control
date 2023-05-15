@@ -242,6 +242,8 @@ int Referee::unpack(uint8_t* rx_data)
           rm_msgs::GameRobotStatus game_robot_status_data;
           memcpy(&game_robot_status_ref, rx_data + 7, sizeof(rm_referee::GameRobotStatus));
 
+          game_robot_status_data.remain_hp = game_robot_status_ref.remain_hp;
+          game_robot_status_data.max_hp = game_robot_status_ref.max_hp;
           game_robot_status_data.mains_power_chassis_output = game_robot_status_ref.mains_power_chassis_output;
           game_robot_status_data.mains_power_gimbal_output = game_robot_status_ref.mains_power_gimbal_output;
           game_robot_status_data.mains_power_shooter_output = game_robot_status_ref.mains_power_shooter_output;
@@ -442,6 +444,22 @@ int Referee::unpack(uint8_t* rx_data)
 
             client_map_receive_pub_.publish(client_map_receive_data);
           }
+          break;
+        }
+        case rm_referee::TARGET_POS_CMD:
+        {
+          rm_referee::ClientMapSendData client_map_send_data_ref;
+          rm_msgs::ClientMapSendData client_map_send_data;
+          memcpy(&client_map_send_data_ref, rx_data + 7, sizeof(rm_referee::ClientMapSendData));
+
+          client_map_send_data.target_position_x = client_map_send_data_ref.target_position_x;
+          client_map_send_data.target_position_y = client_map_send_data_ref.target_position_y;
+          client_map_send_data.target_position_z = client_map_send_data_ref.target_position_z;
+          client_map_send_data.command_keyboard = client_map_send_data_ref.command_keyboard;
+          client_map_send_data.target_robot_ID = client_map_send_data_ref.target_robot_ID;
+          client_map_send_data.stamp = last_get_data_time_;
+
+          client_map_send_data_pub_.publish(client_map_send_data);
           break;
         }
         default:

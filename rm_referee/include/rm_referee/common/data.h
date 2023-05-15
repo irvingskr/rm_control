@@ -63,6 +63,7 @@
 #include <rm_msgs/RfidStatus.h>
 #include <rm_msgs/EngineerUi.h>
 #include <rm_msgs/GameRobotHp.h>
+#include <rm_msgs/BalanceState.h>
 #include <rm_msgs/CapacityData.h>
 #include <rm_msgs/DartClientCmd.h>
 #include <rm_msgs/ActuatorState.h>
@@ -106,7 +107,7 @@ public:
   void initSerial()
   {
     serial::Timeout timeout = serial::Timeout::simpleTimeout(50);
-    serial_.setPort("/dev/usbReferee");
+    serial_.setPort("/dev/ttyUSB0");
     serial_.setBaudrate(115200);
     serial_.setTimeout(timeout);
     if (serial_.isOpen())
